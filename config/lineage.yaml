@@ -1,0 +1,28 @@
+# Table-level lineage: source system -> raw -> staging -> mart -> metrics
+sources:
+  raw_accounts: CRM (Salesforce-style Account object)
+  raw_sales_reps: CRM (User object)
+  raw_territories: Territory master (Sales Operations)
+  raw_products: Product master (ERP)
+  raw_orders: ERP order lines
+edges:
+  - [raw_accounts, stg_accounts]
+  - [raw_territories, stg_accounts]
+  - [raw_accounts, account_merge_map]
+  - [raw_products, stg_products]
+  - [raw_orders, stg_orders]
+  - [account_merge_map, stg_orders]
+  - [stg_products, stg_orders]
+  - [stg_accounts, dim_account]
+  - [raw_territories, dim_account]
+  - [stg_products, dim_product]
+  - [stg_orders, fct_orders]
+  - [dim_account, fct_orders]
+  - [dim_product, fct_orders]
+  - [raw_orders, exceptions]
+  - [raw_accounts, exceptions]
+  - [fct_orders, metric:net_sales_usd]
+  - [fct_orders, metric:active_accounts]
+  - [fct_orders, metric:avg_order_value_usd]
+  - [fct_orders, metric:surgical_share]
+  - [fct_orders, metric:latam_share]

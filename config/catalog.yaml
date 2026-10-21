@@ -1,0 +1,111 @@
+# Business metadata for the data catalog. Technical metadata (types, null %,
+# distinct counts) is profiled automatically and merged in by govern/catalog.py.
+# sensitivity: Public | Internal | Confidential | PII
+# Raw tables are intentionally only partly documented, as they usually are on day one;
+# the catalog-coverage KPI measures that gap.
+
+raw_accounts:
+  owner: Sales Operations
+  steward: CRM Admin
+  source: CRM Account object
+  primary_key: account_id
+  description: Customer accounts (hospitals, surgery centers, practices, retailers) as entered in CRM.
+  columns:
+    account_id: {definition: CRM account identifier., sensitivity: Internal}
+    account_name: {definition: Legal or trading name of the account., sensitivity: Confidential}
+    account_type: {definition: Customer segment of the account., sensitivity: Internal}
+    territory_id: {definition: Sales territory the account is assigned to., sensitivity: Internal}
+    country_code: {definition: ISO country code entered by the rep., sensitivity: Internal}
+
+raw_sales_reps:
+  owner: Sales Operations
+  steward: CRM Admin
+  source: CRM User object
+  primary_key: rep_id
+  description: Field sales representatives.
+  columns:
+    rep_id: {definition: CRM user identifier for the rep., sensitivity: Internal}
+    rep_name: {definition: Full name of the rep., sensitivity: PII}
+    rep_email: {definition: Work email of the rep., sensitivity: PII}
+
+raw_territories:
+  owner: Sales Operations
+  steward: Sales Ops Analyst
+  source: Territory master
+  primary_key: territory_id
+  description: Sales territories and the region and country they roll up to.
+  columns:
+    territory_id: {definition: Territory identifier., sensitivity: Internal}
+    territory_name: {definition: Territory display name., sensitivity: Internal}
+    region: {definition: "Commercial region: US, CA or LATAM.", sensitivity: Internal}
+    country_code: {definition: ISO country code of the territory., sensitivity: Internal}
+
+raw_products:
+  owner: Product Management
+  steward: ERP Master Data
+  source: ERP product master
+  primary_key: sku
+  description: Sellable products with category and list price.
+  columns:
+    sku: {definition: Stock-keeping unit code., sensitivity: Internal}
+    product_name: {definition: Product display name., sensitivity: Public}
+    category: {definition: "Product family: Surgical or Vision Care.", sensitivity: Internal}
+
+raw_orders:
+  owner: Commercial Finance
+  steward: ERP Order Management
+  source: ERP order lines
+  primary_key: order_id
+  description: Order lines as received from ERP, before validation.
+  columns:
+    order_id: {definition: Order line identifier., sensitivity: Internal}
+    account_id: {definition: Ordering account., sensitivity: Internal}
+    order_date: {definition: Date the order was booked., sensitivity: Internal}
+    sku: {definition: Product ordered., sensitivity: Internal}
+
+dim_account:
+  owner: Sales Operations
+  steward: Commercial Analytics
+  source: stg_accounts + raw_territories
+  primary_key: account_id
+  description: One row per de-duplicated account with an assigned territory. Certified for reporting and AI use.
+  columns:
+    account_id: {definition: Surviving account identifier after duplicate merge., sensitivity: Internal}
+    account_name: {definition: Legal or trading name of the account., sensitivity: Confidential}
+    account_type: {definition: "Customer segment: Hospital, Ambulatory Surgery Center, Private Practice or Optical Retailer.", sensitivity: Internal}
+    territory_id: {definition: Assigned sales territory., sensitivity: Internal}
+    territory_name: {definition: Territory display name., sensitivity: Internal}
+    region: {definition: "Commercial region: US, CA or LATAM.", sensitivity: Internal}
+    country_code: {definition: ISO country code from the territory master (not rep-entered)., sensitivity: Internal}
+    owner_rep_id: {definition: Rep who owns the account., sensitivity: Internal}
+
+dim_product:
+  owner: Product Management
+  steward: Commercial Analytics
+  source: stg_products
+  primary_key: sku
+  description: One row per SKU with a standardized category label. Certified.
+  columns:
+    sku: {definition: Stock-keeping unit code., sensitivity: Internal}
+    product_name: {definition: Product display name., sensitivity: Public}
+    category: {definition: "Product family from the governed list: Surgical or Vision Care.", sensitivity: Internal}
+    list_price_usd: {definition: List price per unit in USD before discounts., sensitivity: Confidential}
+
+fct_orders:
+  owner: Commercial Finance
+  steward: Commercial Analytics
+  source: stg_orders + dim_account + dim_product
+  primary_key: order_id
+  description: Validated order lines joined to account and product. Source of all governed sales metrics.
+  columns:
+    order_id: {definition: Order line identifier., sensitivity: Internal}
+    account_id: {definition: Surviving account identifier., sensitivity: Internal}
+    order_date: {definition: "Date the order was booked (YYYY-MM-DD), never in the future.", sensitivity: Internal}
+    order_year: {definition: Calendar year of order_date., sensitivity: Internal}
+    sku: {definition: Product ordered., sensitivity: Internal}
+    category: {definition: Standardized product family., sensitivity: Internal}
+    quantity: {definition: Units ordered; always positive., sensitivity: Internal}
+    net_amount_usd: {definition: Invoiced amount after discounts in USD., sensitivity: Confidential}
+    region: {definition: Commercial region of the account., sensitivity: Internal}
+    territory_id: {definition: Territory of the account at order time., sensitivity: Internal}
+    rep_id: {definition: Rep credited with the order., sensitivity: Internal}

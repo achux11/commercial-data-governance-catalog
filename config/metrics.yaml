@@ -1,0 +1,31 @@
+# Governed metric definitions (semantic layer). One definition, one owner, one SQL.
+- name: net_sales_usd
+  label: Net Sales (USD)
+  definition: Sum of net invoiced amount after discounts for valid, completed orders.
+  owner: Commercial Finance
+  grain: order line
+  sql: SELECT SUM(net_amount_usd) FROM fct_orders
+- name: active_accounts
+  label: Active Accounts
+  definition: Distinct accounts with at least one valid order in the period.
+  owner: Sales Operations
+  grain: account
+  sql: SELECT COUNT(DISTINCT account_id) FROM fct_orders
+- name: avg_order_value_usd
+  label: Average Order Value (USD)
+  definition: Net Sales divided by the number of valid orders.
+  owner: Commercial Finance
+  grain: order
+  sql: SELECT SUM(net_amount_usd) / COUNT(DISTINCT order_id) FROM fct_orders
+- name: surgical_share
+  label: Surgical Share of Net Sales
+  definition: Net Sales from the Surgical category divided by total Net Sales.
+  owner: Commercial Analytics
+  grain: order line
+  sql: SELECT SUM(CASE WHEN category = 'Surgical' THEN net_amount_usd ELSE 0 END) / SUM(net_amount_usd) FROM fct_orders
+- name: latam_share
+  label: Latin America Share of Net Sales
+  definition: Net Sales from LATAM territories divided by total Net Sales.
+  owner: Commercial Analytics
+  grain: order line
+  sql: SELECT SUM(CASE WHEN region = 'LATAM' THEN net_amount_usd ELSE 0 END) / SUM(net_amount_usd) FROM fct_orders
