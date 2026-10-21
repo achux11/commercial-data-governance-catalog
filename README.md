@@ -31,7 +31,7 @@ flowchart LR
 | Tables / columns cataloged | 8 / 50 |
 | Catalog coverage (definition + owner): raw → mart | **70.4% → 100%** |
 | PII columns tagged | 2 (rep name, rep email) |
-| Quality rules failing: raw → mart | **9 of 18 (369 rows) → 0** |
+| Quality rules failing: raw → mart | **9 of 10 (369 rows) → 0 of 9** |
 | Duplicate accounts merged | 40 |
 | Order lines: raw → certified | 60,000 → 58,989 |
 | Records in the exceptions queue | 1,036, each with a reason |
